@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード生成フォーム (自動保存)</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        /* CSSは前回のモダン＆レスポンシブ版と同じです */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8; 
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        #uniqueId {
+            background-color: #eef2ff;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        input[type="text"], 
+        input[type="number"], 
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 25px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        #qrcode-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border: 1px dashed #9ca3af;
+            text-align: center;
+        }
+
+        #placeholder-text {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        #qrcode-img {
+            max-width: 100%;
+            height: auto;
+            border: 5px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body onload="generateUUID()"> 
+
+    <div class="container">
+        <h1>💾 自動保存付き QRコード生成フォーム 💾</h1>
+        <form id="qrForm">
+            
+            <label for="uniqueId">🔑 **一意のチケットID**:</label>
+            <input type="text" id="uniqueId" readonly title="このIDはシステムが自動生成します" placeholder="自動生成中...">
+
+            <label for="name">👤 名前:</label>
+            <input type="text" id="name" required placeholder="氏名を入力してください">
+
+            <label for="count">👥 人数:</label>
+            <input type="number" id="count" min="1" value="1" required>
+
+            <label for="email">📧 メールアドレス:</label>
+            <input type="email" id="email" required placeholder="有効なメールアドレスを入力してください">
+
+            <button type="submit">QRコードを生成 & 自動保存</button>
+        </form>
+
+        <hr>
+
+        <h2>📸 生成エリア</h2>
+        <div id="qrcode-container">
+            <img id="qrcode-img" alt="生成されたQRコード" style="display: none;">
+            <p id="placeholder-text">フォームに入力してボタンを押すと、ここにQRコードが表示され、自動でダウンロードされます。</p>
+        </div>
+    </div>
+
+    <script>
+        const qrForm = document.getElementById("qrForm");
+        const qrcodeImg = document.getElementById("qrcode-img");
+        const placeholderText = document.getElementById("placeholder-text");
+        const uniqueIdInput = document.getElementById("uniqueId");
+
+        /**
+         * v4 UUID (Universally Unique Identifier) を生成する関数。
+         */
+        function generateUUID() {
+            if (window.crypto && window.crypto.randomUUID) {
+                return window.crypto.randomUUID();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // ページロード時にIDをセット
+        window.onload = function() {
+            uniqueIdInput.value = generateUUID();
+        };
+
+
+        // =============================================================
+        //  自動ダウンロード機能の追加
+        // =============================================================
+        function downloadQR(dataURL, filename) {
+            // <a>要素を一時的に作成
+            const link = document.createElement('a');
+            
+            // ダウンロードするファイル名を設定
+            link.download = filename; 
+            
+            // Data URLをリンクの参照先に設定
+            link.href = dataURL;
+            
+            // 要素を非表示でページに追加し、プログラムからクリック
+            document.body.appendChild(link);
+            link.click();
+            
+            // 使用済みの要素をページから削除
+            document.body.removeChild(link);
+        }
+        // =============================================================
+
+
+        qrForm.addEventListener("submit", function(event) {
+            event.preventDefault(); 
+            
+            // 1. フォームから値を取得
+            const id = uniqueIdInput.value;
+            const name = document.getElementById("name").value;
+            const count = document.getElementById("count").value;
+            const email = document.getElementById("email").value;
+
+            // 2. QRコードに格納するデータを整形
+            const qrData = `ID: ${id}\n名前: ${name}\n人数: ${count}\nメール: ${email}`;
+            
+            // 3. ダウンロードファイル名を決定 (一意のIDを使用)
+            const filename = `ticket-${id.substring(0, 8)}.png`;
+
+            // 4. QRコードを生成（非同期処理）
+            QRCode.toDataURL(qrData, { 
+                errorCorrectionLevel: 'H', 
+                width: 200,                
+                margin: 2 
+            }, function (err, url) {
+                if (err) {
+                    console.error(err);
+                    alert("QRコードの生成に失敗しました。");
+                    return;
+                }
+                
+                // 5. QRコードを画面に表示
+                qrcodeImg.src = url;
+                qrcodeImg.style.display = 'block';
+                placeholderText.style.display = 'none';
+
+                // 6. ⭐ 自動ダウンロードを実行 ⭐
+                downloadQR(url, filename);
+                
+                // 7. 次の登録のためにIDを更新
+                uniqueIdInput.value = generateUUID();
+            });
+        });
+    </script>
+
+</body>
+</html>
