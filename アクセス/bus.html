@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バス案内 - 相模原高校</title>
+    <style>
+        /* 全体のスタイル */
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; margin: 0; padding: 10px; color: #333; }
+        .app-container { max-width: 400px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .header-title { font-size: 18px; font-weight: bold; }
+        .status-badge { font-size: 10px; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; color: #666; }
+
+        /* カードのスタイル */
+        .bus-card {
+            display: flex; align-items: center; gap: 12px; background: #fff;
+            border: 1px solid #ddd; border-radius: 12px; padding: 12px;
+            margin-bottom: 12px; text-decoration: none; color: inherit;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.1s;
+        }
+        .bus-card:active { transform: scale(0.98); background: #f9f9f9; }
+
+        /* 乗り場バッジ */
+        .platform-badge {
+            width: 50px; height: 50px; background: #1e3a8a; color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 8px; flex-shrink: 0;
+        }
+        .platform-label { font-size: 9px; opacity: 0.9; }
+        .platform-number { font-size: 20px; font-weight: bold; }
+
+        /* テキストエリア */
+        .bus-info { flex-grow: 1; min-width: 0; }
+        .bus-route { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bus-time { font-size: 12px; color: #666; margin-top: 2px; }
+
+        /* カウントダウンエリア */
+        .countdown-area { text-align: right; flex-shrink: 0; }
+        .countdown-label { font-size: 10px; color: #2563eb; font-weight: bold; }
+        .countdown-main { color: #2563eb; }
+        .countdown-num { font-size: 24px; font-weight: 900; }
+        .countdown-unit { font-size: 12px; font-weight: bold; }
+
+        /* 補足情報 */
+        .info-box { background: #eff6ff; border: 1px solid #dbeafe; padding: 10px; border-radius: 8px; font-size: 12px; color: #1e40af; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-title">🚌 次のバス案内</div>
+        <div class="status-badge">自動更新中</div>
+    </div>
+    
+    <div id="bus-list">
+        </div>
+
+    <div class="info-box">
+        <strong>💡 乗り場について：</strong><br>
+        相模原駅南口のバス乗り場から発車します。カードをタップすると地図を確認できます。
+    </div>
+</div>
+
+<script>
+    // 【時刻表データ】
+    const busSchedule = [
+        { 
+            id: 1, route: "相17：水郷田名行", platform: "2", 
+            mapUrl: "https://www.google.com/maps/search/?api=1&query=相模原駅南口+2番乗り場",
+            times: ["08:30", "09:05", "09:25", "09:45", "10:05", "10:25", "10:45", "11:10"] 
+        },
+        { 
+            id: 2, route: "相14：横山団地経由", platform: "1", 
+            mapUrl: "https://www.google.com/maps/search/?api=1&query=相模原駅南口+1番乗り場",
+            times: ["08:40", "09:12", "09:32", "09:52", "10:12", "10:32", "10:52", "11:15"] 
+        }
+    ];
+
+    function update() {
+        const now = new Date();
+        const container = document.getElementById('bus-list');
+        let html = '';
+
+        busSchedule.forEach(bus => {
+            const nextTimeStr = bus.times.find(t => {
+                const [h, m] = t.split(':');
+                const target = new Date();
+                target.setHours(h, m, 0);
+                return target > now;
+            });
+
+            if (nextTimeStr) {
+                const [h, m] = nextTimeStr.split(':');
+                const targetTime = new Date();
+                targetTime.setHours(h, m, 0);
+                const diffMs = targetTime - now;
+                const min = Math.floor(diffMs / (1000 * 60));
+
+                html += `
+                    <a href="${bus.mapUrl}" target="_blank" class="bus-card">
+                        <div class="platform-badge">
+                            <span class="platform-label">乗り場</span>
+                            <span class="platform-number">${bus.platform}</span>
+                        </div>
+                        <div class="bus-info">
+                            <div class="bus-route">${bus.route}</div>
+                            <div class="bus-time">${nextTimeStr} 発車予定</div>
+                        </div>
+                        <div class="countdown-area">
+                            <div class="countdown-label">あと</div>
+                            <div class="countdown-main">
+                                <span class="countdown-num">${min}</span>
+                                <span class="countdown-unit">分</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            }
+        });
+        container.innerHTML = html || '<div style="text-align:center; padding:20px; color:#999;">本日のバスは終了しました</div>';
+    }
+
+    setInterval(update, 1000);
+    update();
+</script>
+
+</body>
+</html>
