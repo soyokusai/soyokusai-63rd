@@ -3,119 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文化祭 企画検索＆混雑状況</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <title>企画検索＆混雑状況</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f8f9fa; }
+        .search-sticky { position: sticky; top: 0; background: #f8f9fa; padding: 10px 0; z-index: 100; }
+        input { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 2px solid #ddd; font-size: 16px; }
         
-        /* カードスライドショーのスタイル */
-        .swiper { width: 100%; padding-bottom: 30px; }
-        .project-card {
-            background: white; border-radius: 15px; padding: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); height: 250px;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .status-badge {
-            display: inline-block; padding: 5px 10px; border-radius: 20px;
-            font-size: 0.8em; font-weight: bold; color: white;
-        }
+        /* 地図エリア */
+        .map-box { width: 100%; height: 200px; background: #eee; border-radius: 12px; position: relative; margin: 15px 0; overflow: hidden; }
+        .pin { position: absolute; width: 12px; height: 12px; background: red; border-radius: 50%; border: 2px solid white; }
+
+        /* リスト表示 */
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .badge { padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; }
         .status-空き { background: #28a745; }
         .status-混雑 { background: #ffc107; color: black; }
         .status-売り切れ・終了 { background: #dc3545; }
-
-        /* 地図エリアのスタイル */
-        .map-container {
-            position: relative; width: 100%; height: 300px;
-            background: #ddd; margin: 20px 0; border-radius: 10px;
-            overflow: hidden; border: 2px solid #ccc;
-        }
-        .map-image { width: 100%; height: 100%; object-fit: contain; }
-        .map-pin {
-            position: absolute; width: 12px; height: 12px;
-            background: red; border-radius: 50%; transform: translate(-50%, -50%);
-            cursor: pointer; border: 2px solid white;
-        }
-
-        h2 { border-left: 5px solid #333; padding-left: 10px; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🌟 おすすめ・注目企画</h2>
-    <div class="swiper">
-        <div class="swiper-wrapper" id="card-container">
-            </div>
-        <div class="swiper-pagination"></div>
-    </div>
-
-    <h2>🗺️ 校内マップ</h2>
-    <div class="map-container">
-        <img src="YOUR_MAP_IMAGE_URL.jpg" alt="校内図" class="map-image">
-        <div id="map-pins"></div>
-    </div>
-
-    <h2>🔍 企画一覧・検索</h2>
-    <input type="text" id="search" placeholder="企画名や団体名で検索..." 
-           style="width:100%; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #ccc;">
-    <div id="list-container"></div>
+<div class="search-sticky">
+    <input type="text" id="search" placeholder="企画名・団体名で検索...">
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<h3>📍 校内マップ</h3>
+<div class="map-box">
+    <img src="YOUR_MAP_URL" style="width:100%;">
+    <div id="map-pins"></div>
+</div>
+
+<h3>📋 企画一覧</h3>
+<div id="list"></div>
+
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwGPser_Y53kvBUxZKRRBDhciy9Xk6yVUALsAYxjrgn3ktOhrlfUMI-zUJ4GePwQAvW/exec";
+    let dataList = [];
 
-    async function loadData() {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        
-        renderCards(data);
-        renderMap(data);
+    async function fetchData() {
+        const res = await fetch(GAS_URL);
+        dataList = await res.json();
+        render(dataList);
     }
 
-    function renderCards(projects) {
-    const container = document.getElementById('card-container');
-    container.innerHTML = projects.map(p => `
-        <div class="swiper-slide">
-            <div class="project-card">
+    function render(items) {
+        const listDiv = document.getElementById('list');
+        listDiv.innerHTML = items.map(p => `
+            <div class="card">
                 <div>
-                    <span class="status-badge status-${p['状況']}">${p['状況']}</span>
-                    <h3>${p['企画名']}</h3>
-                    <p style="color: #666; font-size: 0.9em;">
-                        ${p['団体名']} (${p['場所(棟)']}${p['場所(階)']}階)
-                    </p>
+                    <div style="font-weight:bold;">${p['企画名']}</div>
+                    <div style="font-size:13px; color:#666;">${p['団体名']} | ${p['場所(棟)']}${p['場所(階)']}階</div>
                 </div>
-                <a href="${p['リンクURL']}" target="_blank" style="text-decoration:none; color:#007bff;">詳細を見る →</a>
+                <div class="badge status-${p['状況']}">${p['状況']}</div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
-    // Swiperの初期化（既に存在する場合は一度破棄するか、チェックを入れると安全です）
-    new Swiper('.swiper', {
-        pagination: { el: '.swiper-pagination' },
-        slidesPerView: 1.2,
-        spaceBetween: 20,
-        centeredSlides: true,
+    document.getElementById('search').addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = dataList.filter(p => p['企画名'].includes(val) || p['団体名'].includes(val));
+        render(filtered);
     });
-}
 
-    function renderMap(projects) {
-    const pinContainer = document.getElementById('map-pins');
-    const locationMap = {
-        "A棟": { top: "30%", left: "40%" },
-        "B棟": { top: "50%", left: "60%" },
-        "C棟": { top: "70%", left: "30%" }
-    };
-
-    pinContainer.innerHTML = projects.map(p => {
-        const pos = locationMap[p['場所(棟)']]; // ここを p['場所(棟)'] に修正
-        if(!pos) return '';
-        return `<div class="map-pin" style="top:${pos.top}; left:${pos.left};" title="${p['企画名']}"></div>`;
-    }).join('');
-}
-
-    loadData();
+    fetchData();
 </script>
 </body>
 </html>
