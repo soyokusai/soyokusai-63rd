@@ -34,33 +34,58 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwGPser_Y53kvBUxZKRRBDhciy9Xk6yVUALsAYxjrgn3ktOhrlfUMI-zUJ4GePwQAvW/exec";
+let swiperInstance = null; // Swiperのインスタンスを保持する変数
 
-        async function updateData() {
-            try {
-                const res = await fetch(GAS_URL);
-                const data = await res.json();
-                const container = document.getElementById('slide-container');
-                
-                container.innerHTML = data.map(p => `
-                    <div class="swiper-slide">
-                        <div class="slide-content">
-                            <div class="status-badge status-${p['状況']}">${p['状況']}</div>
-                            <div class="group-name">${p['団体名']}</div>
-                            <div class="project-name">${p['企画名']}</div>
-                            <div class="location">📍 ${p['場所(棟)']} ${p['場所(階)']}階</div>
-                        </div>
-                    </div>
-                `).join('');
-
-                const swiper = new Swiper('.swiper', {
-                    loop: true,
-                    autoplay: { delay: 5000 }, // 5秒ごとに切替
-                    effect: 'fade'
-                });
-            } catch (e) { console.error(e); }
+async function updateData() {
+    try {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+        const container = document.getElementById('slide-container');
+        
+        // 1. もし既にSwiperが動いていたら破棄する
+        if (swiperInstance !== null) {
+            swiperInstance.destroy(true, true);
         }
-        updateData();
-        setInterval(updateData, 300000); // 5分ごとに最新情報に更新
+
+        // 2. HTMLの中身を空にしてから新しいデータを追加する
+        container.innerHTML = data.map(p => `
+            <div class="swiper-slide">
+                <div class="slide-content">
+                    <div style="font-size: 4rem; color: #fff; background: #1a73e8; padding: 10px 50px; border-radius: 15px; margin-bottom: 20px;">
+                        ${p['使用教室名']}
+                    </div>
+                    <div class="project-name">${p['企画名']}</div>
+                    <div class="group-name">${p['団体名']}</div>
+                    <div class="status-badge status-${p['状況']}" style="margin-top:40px;">
+                        ${p['状況']}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // 3. 新しくSwiperを初期化し、変数に保存する
+        swiperInstance = new Swiper('.swiper', {
+            loop: true,
+            autoplay: { 
+                delay: 5000,
+                disableOnInteraction: false // ユーザーが操作しても自動再生を止めない
+            },
+            effect: 'fade',
+            fadeEffect: {
+                crossFade: true // 重なりを防ぎ、綺麗に入れ替える
+            }
+        });
+
+    } catch (e) { 
+        console.error("データ更新エラー:", e); 
+    }
+}
+
+// 初回実行
+updateData();
+
+// 5分ごとに更新
+setInterval(updateData, 300000);
     </script>
 </body>
 </html>
