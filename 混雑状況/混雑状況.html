@@ -75,44 +75,45 @@
     }
 
     function renderCards(projects) {
-        const container = document.getElementById('card-container');
-        container.innerHTML = projects.map(p => `
-            <div class="swiper-slide">
-                <div class="project-card">
-                    <div>
-                        <span class="status-badge status-${p.状況}">${p.状況}</span>
-                        <h3>${p.企画名}</h3>
-                        <p style="color: #666; font-size: 0.9em;">${p.団体名} (${p.場所(棟)}${p.場所(階)}階)</p>
-                    </div>
-                    <a href="${p.リンクURL}" target="_blank" style="text-decoration:none; color:#007bff;">詳細を見る →</a>
+    const container = document.getElementById('card-container');
+    container.innerHTML = projects.map(p => `
+        <div class="swiper-slide">
+            <div class="project-card">
+                <div>
+                    <span class="status-badge status-${p['状況']}">${p['状況']}</span>
+                    <h3>${p['企画名']}</h3>
+                    <p style="color: #666; font-size: 0.9em;">
+                        ${p['団体名']} (${p['場所(棟)']}${p['場所(階)']}階)
+                    </p>
                 </div>
+                <a href="${p['リンクURL']}" target="_blank" style="text-decoration:none; color:#007bff;">詳細を見る →</a>
             </div>
-        `).join('');
+        </div>
+    `).join('');
 
-        // Swiperの初期化
-        new Swiper('.swiper', {
-            pagination: { el: '.swiper-pagination' },
-            slidesPerView: 1.2,
-            spaceBetween: 20,
-            centeredSlides: true,
-        });
-    }
+    // Swiperの初期化（既に存在する場合は一度破棄するか、チェックを入れると安全です）
+    new Swiper('.swiper', {
+        pagination: { el: '.swiper-pagination' },
+        slidesPerView: 1.2,
+        spaceBetween: 20,
+        centeredSlides: true,
+    });
+}
 
     function renderMap(projects) {
-        const pinContainer = document.getElementById('map-pins');
-        // 例: C棟ならこの座標に表示、といったマッピングをあらかじめ作成
-        const locationMap = {
-            "A棟": { top: "30%", left: "40%" },
-            "B棟": { top: "50%", left: "60%" },
-            "C棟": { top: "70%", left: "30%" }
-        };
+    const pinContainer = document.getElementById('map-pins');
+    const locationMap = {
+        "A棟": { top: "30%", left: "40%" },
+        "B棟": { top: "50%", left: "60%" },
+        "C棟": { top: "70%", left: "30%" }
+    };
 
-        pinContainer.innerHTML = projects.map(p => {
-            const pos = locationMap[p['場所(棟)']];
-            if(!pos) return '';
-            return `<div class="map-pin" style="top:${pos.top}; left:${pos.left};" title="${p.企画名}"></div>`;
-        }).join('');
-    }
+    pinContainer.innerHTML = projects.map(p => {
+        const pos = locationMap[p['場所(棟)']]; // ここを p['場所(棟)'] に修正
+        if(!pos) return '';
+        return `<div class="map-pin" style="top:${pos.top}; left:${pos.left};" title="${p['企画名']}"></div>`;
+    }).join('');
+}
 
     loadData();
 </script>
